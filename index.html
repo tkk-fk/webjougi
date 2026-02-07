@@ -8,7 +8,6 @@
     /* ===== 基本設定 ===== */
     html, body { 
       height: 100%; 
-      /* モバイルブラウザのアドレスバー対策 (dynamic viewport height) */
       height: 100dvh; 
     }
     body{
@@ -29,8 +28,6 @@
       background:#fff; border-bottom:1px solid #cbd5e1;
       display:flex; justify-content:space-between; align-items:center; gap:10px;
       z-index:100; box-shadow:0 2px 4px rgba(0,0,0,0.05);
-      
-      /* iPhoneのノッチ・ホームバー対応の余白 */
       padding: 10px;
       padding-left: max(10px, env(safe-area-inset-left));
       padding-right: max(10px, env(safe-area-inset-right));
@@ -46,7 +43,6 @@
     }
     button:active{ transform:scale(.96); }
     
-    /* UD配色のボタン */
     #btn-zoom{ background:#00796B; color:#fff; display:flex; align-items:center; gap:5px; } 
     #btn-reset{ background:#E65100; color:#fff; } 
     #btn-calibrate{ background:#546E7A; color:#fff; font-size:.9rem; } 
@@ -68,9 +64,7 @@
     #workspace{
       flex:1; position:relative; display:flex; justify-content:center; align-items:center;
       background:#ECEFF1;
-      overflow: hidden; /* はみ出し防止 */
-      
-      /* 横向き時の左右のセーフエリア確保 */
+      overflow: hidden; 
       padding-left: env(safe-area-inset-left);
       padding-right: env(safe-area-inset-right);
       padding-bottom: env(safe-area-inset-bottom);
@@ -87,7 +81,6 @@
     /* ===== ものさし本体 ===== */
     #ruler-container{
       position:relative; 
-      /* 横向き画面用に高さを少しスリムに調整 */
       height:140px; 
       background:#fff;
       border:2px solid #455A64; border-radius:8px;
@@ -95,10 +88,9 @@
       overflow:hidden;
       transform-origin:left center;
       touch-action:none;
-      margin-top: 20px; /* ガイドメッセージと重ならないように */
+      margin-top: 20px;
     }
 
-    /* ストライプ（色付け）レイヤー */
     #stripes-layer{ position:absolute; inset:0; pointer-events:none; }
     .stripe{
       position:absolute; top:0;
@@ -113,7 +105,6 @@
         opacity: 0.6; 
     }
 
-    /* 目盛りレイヤ */
     #ticks-layer{ position:absolute; inset:0; pointer-events:none; }
 
     .tick{
@@ -134,7 +125,6 @@
     .text-ud-blue { color: #0D47A1; }   
     .text-ud-orange { color: #BF360C; } 
 
-    /* 赤三角 */
     .tri{
       position:absolute; bottom: 48px;
       width:0; height:0;
@@ -163,8 +153,9 @@
       display:none; justify-content:center; align-items:center;
       z-index:999; color:#fff; flex-direction:column;
       padding:20px; gap:16px; touch-action:none;
-      padding-left: env(safe-area-inset-left);
-      padding-right: env(safe-area-inset-right);
+      padding-left: max(20px, env(safe-area-inset-left));
+      padding-right: max(20px, env(safe-area-inset-right));
+      padding-bottom: max(20px, env(safe-area-inset-bottom));
     }
     #calibration-modal h2{ margin:0; font-size:1.4rem; color:#ECEFF1; text-align: center;}
     #calibration-modal p{ margin:0; text-align:center; line-height:1.6; color:#B0BEC5; font-size: 0.95rem; }
@@ -181,14 +172,19 @@
     /* ===== 拡大モーダル ===== */
     #zoom-modal{
       position:fixed; inset:0; background:rgba(0,0,0,0.7);
-      display:none; justify-content:center; align-items:center; /* 中央表示に変更 */
-      z-index:998; padding:20px; touch-action:none;
-      padding-left: env(safe-area-inset-left);
-      padding-right: env(safe-area-inset-right);
+      display:none; justify-content:center; align-items:center;
+      z-index:998; 
+      padding: 20px;
+      padding-left: max(20px, env(safe-area-inset-left));
+      padding-right: max(20px, env(safe-area-inset-right));
+      padding-bottom: max(20px, env(safe-area-inset-bottom));
+      touch-action:none;
     }
     .zoom-sheet{
       width:min(900px, 95%);
-      max-height: 95%;
+      /* 画面高さの90%を超えないように制限し、はみ出る場合はスクロール */
+      max-height: 90dvh;
+      overflow-y: auto;
       background:#fff; border-radius:16px;
       box-shadow:0 4px 30px rgba(0,0,0,0.5);
       padding:16px; display:flex; flex-direction:column; gap:12px;
@@ -197,9 +193,10 @@
     .zoom-title{ font-size:1.2rem; font-weight:900; margin-right:auto; color:#263238; }
     
     .zoom-viewport{
-      position:relative; width:100%; height:160px; /* 少し縮小 */
+      position:relative; width:100%; height:160px;
       background:#FAFAFA; border-radius:12px; overflow:hidden;
       border:2px solid #CFD8DC; touch-action:none;
+      flex-shrink: 0; /* スクロール時に潰れないように */
     }
     .zoom-centerline{
       position:absolute; top:0; bottom:0; left:50%;
@@ -224,16 +221,23 @@
     #zoom-close{ background:#ECEFF1; color:#263238; }
     #zoom-minus,#zoom-plus{ background:#fff; color:#263238; font-weight:bold; }
     #zoom-factor{ background:#00796B; color:#fff; border:none; }
-    #zoom-center{ width:100%; margin-top:5px; }
+    #zoom-center{ width:100%; margin-top:5px; touch-action: manipulation; }
 
     /* 横向き（ランドスケープ）時の微調整 */
     @media (orientation: landscape) and (max-height: 500px) {
-      .controls { padding: 5px 10px; }
+      .controls { padding: 5px 10px; padding-left: max(10px, env(safe-area-inset-left)); padding-right: max(10px, env(safe-area-inset-right));}
       button { padding: 6px 10px; font-size: 0.9rem; }
-      #ruler-container { height: 130px; }
+      #ruler-container { height: 130px; margin-top: 10px; }
       .tick-label { font-size: 1.4rem; bottom: 40px; }
       .tri { bottom: 38px; }
       #guide-msg { font-size: 0.9rem; top: 5px; }
+      
+      /* 拡大モーダルの調整 */
+      #zoom-modal { padding: 10px; padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+      .zoom-sheet { padding: 10px; gap: 8px; max-height: 95dvh; }
+      .zoom-viewport { height: 130px; }
+      #zoom-ruler { height: 110px; }
+      .zoom-controls button { padding: 6px 12px; font-size: 0.9rem; }
     }
   </style>
 </head>
@@ -473,8 +477,8 @@
 
   document.addEventListener("touchmove", (e)=>{
     const t = e.target;
-    if (t && (t.tagName === "INPUT" || t.closest("#zoom-viewport"))) return; 
-    if (t.type === "range") return;
+    // 拡大モーダル内とスライダーはスクロールを許可
+    if (t && (t.tagName === "INPUT" || t.closest(".zoom-sheet"))) return; 
     e.preventDefault();
   }, {passive:false});
 
@@ -666,6 +670,9 @@
   
   zoomMinus.addEventListener("click", ()=>{ zoomFactor = clamp(zoomFactor - 1, 2, 5); zoomFactorBtn.textContent = `x${zoomFactor}`; rebuildZoomRuler(); });
   zoomPlus.addEventListener("click", ()=>{ zoomFactor = clamp(zoomFactor + 1, 2, 5); zoomFactorBtn.textContent = `x${zoomFactor}`; rebuildZoomRuler(); });
+  
+  // モーダルの背景クリックで閉じる
+  zoomModal.addEventListener("pointerdown", (e)=>{ if (e.target === zoomModal) closeZoom(); });
 
   window.addEventListener("resize", ()=>{ if (zoomOpen) updateZoomPosition(); });
 
