@@ -643,8 +643,12 @@
     btnZoom.style.background = "#d32f2f";
     btnZoom.textContent = "🔍 閉じる";
     
-    if(startMm != null && endMm != null) zoomCenterMm = Math.round((startMm + endMm)/2);
-    else zoomCenterMm = 100;
+    // 【修正箇所】右端（大きい値）を中心に
+    if(startMm != null && endMm != null) {
+      zoomCenterMm = Math.max(startMm, endMm);
+    } else {
+      zoomCenterMm = 100;
+    }
 
     zoomCenter.value = String(zoomCenterMm);
     zoomFactorBtn.textContent = `x${zoomFactor}`;
