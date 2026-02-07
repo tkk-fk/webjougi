@@ -2,266 +2,242 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>なぞって測る！デジタルものさし</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>UDカラーものさし</title>
   <style>
-    :root{ --appH: 100vh; } /* JSでvisualViewport高さを入れる */
-
-    html, body { height: 100%; }
+    /* ===== 基本設定 ===== */
+    html, body { 
+      height: 100%; 
+      height: 100dvh; 
+    }
     body{
       margin:0; padding:0; overflow:hidden;
       font-family:"Hiragino Kaku Gothic ProN","Noto Sans JP",system-ui,sans-serif;
-      background:#f0f4f8;
+      background:#f4f7f9;
       touch-action:none; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;
       position:fixed; inset:0;
     }
 
-    #app{
-      display:flex; flex-direction:column;
-      height: var(--appH);
-      width:100vw; position:relative;
+    #app{ 
+      display:flex; flex-direction:column; 
+      height:100%; width:100%; position:relative; 
     }
 
+    /* ===== コントロールバー ===== */
     .controls{
-      padding:10px; background:#fff; border-bottom:2px solid #ccc;
+      background:#fff; border-bottom:1px solid #cbd5e1;
       display:flex; justify-content:space-between; align-items:center; gap:10px;
-      z-index:100; box-shadow:0 2px 5px rgba(0,0,0,0.1);
+      z-index:100; box-shadow:0 2px 4px rgba(0,0,0,0.05);
+      padding: 10px;
+      padding-left: max(10px, env(safe-area-inset-left));
+      padding-right: max(10px, env(safe-area-inset-right));
+      padding-top: max(10px, env(safe-area-inset-top));
     }
-    .btn-group{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .btn-group{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
 
     button{
-      font-size:1.15rem; padding:10px 18px; border:none; border-radius:8px;
-      cursor:pointer; font-weight:900; transition:transform .08s;
+      font-size:1rem; padding:8px 14px; border:none; border-radius:8px;
+      cursor:pointer; font-weight:700; transition:transform .08s;
       -webkit-tap-highlight-color:transparent; touch-action:manipulation; white-space:nowrap;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
     }
     button:active{ transform:scale(.96); }
-
-    #btn-zoom{ background:#4CAF50; color:#fff; display:flex; align-items:center; gap:5px; }
-    #btn-reset{ background:#FF9800; color:#fff; }
-    #btn-calibrate{ background:#607D8B; color:#fff; font-size:.95rem; }
-
-    #btn-color{ background:#9C27B0; color:#fff; display:flex; align-items:center; gap:5px; border:2px solid transparent; }
-    #btn-color.active { background:#fff; color:#9C27B0; border:2px solid #9C27B0; }
+    
+    #btn-zoom{ background:#00796B; color:#fff; display:flex; align-items:center; gap:5px; } 
+    #btn-reset{ background:#E65100; color:#fff; } 
+    #btn-calibrate{ background:#546E7A; color:#fff; font-size:.9rem; } 
+    
+    #btn-color{ 
+        background:#fff; color:#333; border:2px solid #333; 
+        display:flex; align-items:center; gap:5px; 
+    }
+    #btn-color.active { background:#333; color:#fff; }
 
     .readout{
-      background:#f1f5f9; border:1px solid #e2e8f0;
-      padding:8px 12px; border-radius:999px;
-      font-weight:900; color:#0f172a; font-size:1rem;
-      max-width:min(64vw, 720px);
+      background:#fff; border:2px solid #90A4AE;
+      padding:6px 12px; border-radius:999px;
+      font-weight:900; color:#263238; font-size:0.95rem;
+      white-space: nowrap;
     }
-    .readout small{ font-weight:800; color:#475569; margin-left:6px; }
+    .readout small{ font-weight:700; color:#546E7A; margin-left:6px; font-size:0.8rem;}
 
     #workspace{
-      flex:1; min-height:0;
-      position:relative; display:flex; justify-content:center; align-items:center;
-      background:#eef;
-      padding-bottom: env(safe-area-inset-bottom, 0px);
-      padding-left: env(safe-area-inset-left, 0px);
-      padding-right: env(safe-area-inset-right, 0px);
+      flex:1; position:relative; display:flex; justify-content:center; align-items:center;
+      background:#ECEFF1;
+      overflow: hidden; 
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+      padding-bottom: env(safe-area-inset-bottom);
     }
 
     #guide-msg{
-      position:absolute; top:18px; width:100%;
-      text-align:center; color:#555; font-size:1.05rem;
-      pointer-events:none; padding:0 10px; line-height:1.35;
+      position:absolute; top:10px; width:100%;
+      text-align:center; color:#37474F; font-size:1rem; font-weight:bold;
+      pointer-events:none; padding:0 10px; line-height:1.4;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.8);
+      z-index: 50;
     }
 
     /* ===== ものさし本体 ===== */
     #ruler-container{
-      position:relative; height:150px; background:#fff;
-      border:2px solid #333; border-radius:10px;
-      box-shadow:5px 5px 15px rgba(0,0,0,0.2);
+      position:relative; 
+      height:140px; 
+      background:#fff;
+      border:2px solid #455A64; border-radius:8px;
+      box-shadow:4px 4px 12px rgba(0,0,0,0.15);
       overflow:hidden;
       transform-origin:left center;
       touch-action:none;
+      margin-top: 20px;
     }
 
-    /* ストライプ */
     #stripes-layer{ position:absolute; inset:0; pointer-events:none; }
     .stripe{
       position:absolute; top:0;
-      height:22px;
+      height:25px; 
       pointer-events:none;
       transform: translateZ(0);
       transition: height 0.3s ease, opacity 0.3s ease;
     }
 
-    /* 色モードON */
     .show-colors .stripe {
-      height: 100% !important;
-      opacity: 0.22; /* 指定 */
+        height: 100% !important;
+        opacity: 0.6; 
     }
 
-    /* 目盛り */
     #ticks-layer{ position:absolute; inset:0; pointer-events:none; }
-    .tick{ position:absolute; bottom:0; width:2px; background:#333; pointer-events:none; }
-    .tick-1mm{ height:15px; width:1px; background:#555; }
-    .tick-5mm{ height:25px; width:2px; }
-    .tick-10mm{ height:40px; width:3px; background:#000; }
+
+    .tick{
+      position:absolute; bottom:0;
+      width:2px; background:#37474F; pointer-events:none;
+    }
+    .tick-1mm{ height:18px; width:1px; background:#546E7A; } 
+    .tick-5mm{ height:30px; width:2px; background:#263238; }
+    .tick-10mm{ height:45px; width:3px; background:#000; }
 
     .tick-label{
-      position:absolute; bottom:45px; transform:translateX(-50%);
-      font-size:1.5rem; font-weight:900; color:#333;
+      position:absolute; bottom:50px; transform:translateX(-50%);
+      font-size:1.6rem; font-weight:900; color:#263238;
       pointer-events:none; white-space:nowrap;
+      font-feature-settings: "tnum"; 
     }
-    .label-strong{ color:#2563eb; }
+    
+    .text-ud-blue { color: #0D47A1; }   
+    .text-ud-orange { color: #BF360C; } 
 
-    /* ★端の数字が切れないように */
-    .tick-label.edge-left{ transform:translateX(0); left:4px !important; }
-    .tick-label.edge-right{ transform:translateX(-100%); }
-
-    /* 1cm位置の三角 */
     .tri{
-      position:absolute;
-      bottom: 42px;
+      position:absolute; bottom: 48px;
       width:0; height:0;
       border-left:7px solid transparent;
       border-right:7px solid transparent;
-      border-top:10px solid #ef4444;
-      transform:translateX(-50%);
-      pointer-events:none;
-      filter: drop-shadow(0 1px 0 rgba(0,0,0,0.08));
+      border-top:10px solid #D50000; 
+      transform:translateX(-50%); pointer-events:none;
     }
-    .tri.edge-left{ transform:translateX(0); left:0px !important; }
-    .tri.edge-right{ transform:translateX(-100%); }
 
     /* ===== 区間塗り ===== */
     #color-layer{
-      position:absolute; top:0; height:100%;
-      width:0; left:0;
-      background: rgba(255, 0, 0, 0.28);
-      border-right:2px solid rgba(185, 28, 28, 0.50);
-      pointer-events:none;
-      z-index:10;
+      position:absolute; top:0; height:100%; width:0; left:0;
+      background: rgba(255, 235, 59, 0.5); 
+      border-right:4px solid #FBC02D; 
+      pointer-events:none; z-index: 10;
     }
     #start-marker{
       position:absolute; bottom:0; height:100%;
-      border-left:3px solid rgba(37,99,235,0.85);
-      display:none; pointer-events:none;
-      z-index:10;
+      border-left:4px solid #0277BD; 
+      display:none; pointer-events:none; z-index: 10;
     }
 
-    /* ===== 校正モーダル（★var(--appH)で切れ防止） ===== */
+    /* ===== 校正モーダル ===== */
     #calibration-modal{
-      position:fixed; top:0; left:0; right:0;
-      height: var(--appH);
-      background:rgba(0,0,0,0.82);
+      position:fixed; inset:0; background:rgba(38, 50, 56, 0.95);
       display:none; justify-content:center; align-items:center;
       z-index:999; color:#fff; flex-direction:column;
-      padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px)) 16px;
-      gap:14px; touch-action:none;
-      overflow:hidden;
+      padding:20px; gap:16px; touch-action:none;
+      padding-left: max(20px, env(safe-area-inset-left));
+      padding-right: max(20px, env(safe-area-inset-right));
+      padding-bottom: max(20px, env(safe-area-inset-bottom));
     }
-    #calibration-modal h2{ margin:0; font-size:1.4rem; }
-    #calibration-modal p{
-      margin:0; text-align:center; line-height:1.5; color:#e2e8f0;
-      max-width:900px;
-    }
+    #calibration-modal h2{ margin:0; font-size:1.4rem; color:#ECEFF1; text-align: center;}
+    #calibration-modal p{ margin:0; text-align:center; line-height:1.6; color:#B0BEC5; font-size: 0.95rem; }
     #calibration-box{
       background:#fff; color:#000;
       display:flex; justify-content:center; align-items:center;
-      border-radius:10px; text-align:center; font-size:.95rem; font-weight:900;
-      padding:10px; box-shadow:0 10px 30px rgba(0,0,0,0.35);
+      border-radius:6px; text-align:center; font-size:.95rem; font-weight:bold;
+      padding:10px; border:2px solid #ccc;
     }
-    .calib-controls{ display:flex; gap:14px; align-items:center; justify-content:center; flex-wrap:wrap; }
-    input[type="range"]{ width:min(520px, 86vw); touch-action:manipulation; }
-    #ppm-label{
-      background: rgba(255,255,255,0.12);
-      border:1px solid rgba(255,255,255,0.18);
-      padding:8px 12px; border-radius:999px; font-weight:900;
-    }
-    #btn-close-calib{ background:#fff; color:#000; font-weight:900; }
+    .calib-controls{ display:flex; gap:14px; align-items:center; justify-content:center; flex-wrap:wrap; width: 100%; }
+    input[type="range"]{ width:min(500px, 80%); height:30px; touch-action:manipulation; }
+    #btn-close-calib{ background:#fff; color:#263238; font-weight:900; padding:12px 30px; margin-top: 10px;}
 
-    /* ===== 拡大モーダル（★var(--appH)+safe-area+スクロールで切れ防止） ===== */
+    /* ===== 拡大モーダル ===== */
     #zoom-modal{
-      position:fixed; top:0; left:0; right:0;
-      height: var(--appH);
-      background:rgba(0,0,0,0.75);
-      display:none; justify-content:center; align-items:flex-end;
-      z-index:998;
-      padding: calc(14px + env(safe-area-inset-top, 0px)) 14px calc(14px + env(safe-area-inset-bottom, 0px)) 14px;
+      position:fixed; inset:0; background:rgba(0,0,0,0.7);
+      display:none; justify-content:center; align-items:center;
+      z-index:998; 
+      padding: 20px;
+      padding-left: max(20px, env(safe-area-inset-left));
+      padding-right: max(20px, env(safe-area-inset-right));
+      padding-bottom: max(20px, env(safe-area-inset-bottom));
       touch-action:none;
-      overflow:hidden;
     }
     .zoom-sheet{
-      width:min(980px, 100%);
+      width:min(900px, 95%);
+      /* 画面高さの90%を超えないように制限し、はみ出る場合はスクロール */
+      max-height: 90dvh;
+      overflow-y: auto;
       background:#fff; border-radius:16px;
-      box-shadow:0 18px 60px rgba(0,0,0,0.35);
-      padding:12px;
-      display:flex; flex-direction:column; gap:10px;
-
-      /* ★画面が小さいときに下が切れないように */
-      max-height: calc(var(--appH) - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
-      overflow:auto;
-      -webkit-overflow-scrolling: touch;
-      overscroll-behavior: contain;
+      box-shadow:0 4px 30px rgba(0,0,0,0.5);
+      padding:16px; display:flex; flex-direction:column; gap:12px;
     }
     .zoom-top{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-    .zoom-title{ font-size:1.1rem; font-weight:900; margin-right:auto; color:#0f172a; }
-    .zoom-pill{
-      background:#f1f5f9; border:1px solid #e2e8f0;
-      padding:6px 10px; border-radius:999px; font-weight:900; color:#0f172a;
-    }
+    .zoom-title{ font-size:1.2rem; font-weight:900; margin-right:auto; color:#263238; }
+    
     .zoom-viewport{
-      position:relative; width:100%;
-      height: clamp(130px, 22vh, 180px); /* ★小さい画面では低くなる */
-      background:#eef2ff; border-radius:12px; overflow:hidden;
-      border:1px solid #c7d2fe; touch-action:none;
+      position:relative; width:100%; height:160px;
+      background:#FAFAFA; border-radius:12px; overflow:hidden;
+      border:2px solid #CFD8DC; touch-action:none;
+      flex-shrink: 0; /* スクロール時に潰れないように */
     }
     .zoom-centerline{
       position:absolute; top:0; bottom:0; left:50%;
-      width:0; border-left:4px solid rgba(37,99,235,0.85);
-      pointer-events:none; z-index:20;
+      width:0; border-left:4px solid #D50000; 
+      pointer-events:none; z-index: 20; opacity: 0.7;
     }
     #zoom-ruler{
-      position:absolute; left:0; top:50%;
-      transform:translateY(-50%);
-      height:150px; background:#fff;
-      border:2px solid #333; border-radius:10px;
-      box-shadow:5px 5px 15px rgba(0,0,0,0.2);
+      position:absolute; left:0; top:50%; transform:translateY(-50%);
+      height:130px; background:#fff;
+      border:2px solid #455A64; border-radius:8px;
       overflow:hidden;
     }
     #zoom-stripes{ position:absolute; inset:0; pointer-events:none; }
     #zoom-ticks{ position:absolute; inset:0; pointer-events:none; }
     #zoom-color{
       position:absolute; top:0; height:100%; width:0; left:0;
-      background: rgba(255, 0, 0, 0.22);
-      border-right:2px solid rgba(185, 28, 28, 0.45);
-      pointer-events:none;
+      background: rgba(255, 235, 59, 0.4);
+      border-right:4px solid #FBC02D; pointer-events:none;
     }
-    .zoom-controls{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-    .zoom-controls button{ font-size:1rem; padding:10px 14px; border-radius:10px; }
-    #zoom-close{ background:#e2e8f0; color:#0f172a; }
-    #zoom-minus,#zoom-plus{ background:#fff; border:1px solid #cbd5e1; color:#0f172a; }
-    #zoom-factor{ background:#16a34a; color:#fff; }
-    #zoom-center{ width:min(640px, 100%); flex:1; }
-    .tiny-note{ font-size:.9rem; color:#475569; line-height:1.35; margin-top:2px; }
+    .zoom-controls{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content: center; }
+    .zoom-controls button{ font-size:1rem; padding:10px 18px; border-radius:12px; border:1px solid #CFD8DC; }
+    #zoom-close{ background:#ECEFF1; color:#263238; }
+    #zoom-minus,#zoom-plus{ background:#fff; color:#263238; font-weight:bold; }
+    #zoom-factor{ background:#00796B; color:#fff; border:none; }
+    #zoom-center{ width:100%; margin-top:5px; touch-action: manipulation; }
 
-    /* =========================================================
-       横向き専用（高さが小さい端末で詰める）
-       ========================================================= */
-    @media (orientation: landscape) and (max-height: 500px){
-      .controls{ padding:6px 8px; gap:8px; }
-      .btn-group{ gap:8px; }
-      button{ font-size:0.95rem; padding:8px 12px; border-radius:10px; }
-      #btn-calibrate{ font-size:0.9rem; }
-      .readout{ font-size:0.92rem; padding:6px 10px; max-width:min(58vw, 520px); }
-      .readout small{ font-size:0.86rem; }
-      #guide-msg{ top:10px; font-size:0.92rem; line-height:1.25; }
-
-      #ruler-container{ height:122px; }
-      .tick-1mm{ height:12px; }
-      .tick-5mm{ height:20px; }
-      .tick-10mm{ height:32px; }
-      .tick-label{ bottom:36px; font-size:1.25rem; }
-      .tri{ bottom:34px; }
-
-      /* 拡大側も合わせる */
-      #zoom-ruler{ height:122px; }
-      .zoom-viewport{ height: clamp(120px, 26vh, 150px); }
-      .zoom-title{ font-size:1.0rem; }
-      .zoom-controls button{ font-size:0.95rem; padding:8px 12px; }
-      .tiny-note{ font-size:0.85rem; }
+    /* 横向き（ランドスケープ）時の微調整 */
+    @media (orientation: landscape) and (max-height: 500px) {
+      .controls { padding: 5px 10px; padding-left: max(10px, env(safe-area-inset-left)); padding-right: max(10px, env(safe-area-inset-right));}
+      button { padding: 6px 10px; font-size: 0.9rem; }
+      #ruler-container { height: 130px; margin-top: 10px; }
+      .tick-label { font-size: 1.4rem; bottom: 40px; }
+      .tri { bottom: 38px; }
+      #guide-msg { font-size: 0.9rem; top: 5px; }
+      
+      /* 拡大モーダルの調整 */
+      #zoom-modal { padding: 10px; padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+      .zoom-sheet { padding: 10px; gap: 8px; max-height: 95dvh; }
+      .zoom-viewport { height: 130px; }
+      #zoom-ruler { height: 110px; }
+      .zoom-controls button { padding: 6px 12px; font-size: 0.9rem; }
     }
   </style>
 </head>
@@ -270,7 +246,7 @@
     <div class="controls">
       <div class="btn-group">
         <button id="btn-calibrate">⚙️ 調整</button>
-        <div class="readout" id="readout">長さ：— <small>（長押ししてなぞる）</small></div>
+        <div class="readout" id="readout">長さ：—</div>
       </div>
       <div class="btn-group">
         <button id="btn-color">🎨 いろ</button>
@@ -281,8 +257,7 @@
 
     <div id="workspace">
       <div id="guide-msg">
-        ここに測りたいものを置いて、<b>長押し</b>してから指でなぞろう<br>
-        （誤タッチ防止：長押ししないと色がつきません）
+        物を置いて <b>長押し</b> → 指でなぞる
       </div>
 
       <div id="ruler-container" aria-label="ものさし">
@@ -295,28 +270,24 @@
   </div>
 
   <div id="calibration-modal" role="dialog" aria-modal="true">
-    <h2>大きさの調整（実寸に合わせる）</h2>
+    <h2>大きさの調整</h2>
     <p>
-      画面上の白いカード枠が、手元のカード（クレカ/ポイントカードなど）と<br>
-      <b>ぴったり同じ幅（85.60mm）</b>になるようにスライダーを動かしてください。
+      画面の白い枠を、手持ちのカード（クレカ等）と<br>
+      <b>同じ幅（85.6mm）</b>に合わせてください。
     </p>
-    <div id="calibration-box">ここにカードを重ねて<br>サイズを合わせてね</div>
-
+    <div id="calibration-box">ここにカードを重ねる</div>
     <div class="calib-controls">
       <span>小</span>
       <input type="range" id="px-per-mm-slider" min="2.00" max="8.50" step="0.01" value="3.78">
       <span>大</span>
-      <span id="ppm-label">1mm = 3.78px</span>
     </div>
-
     <button id="btn-close-calib">完了</button>
   </div>
 
   <div id="zoom-modal" role="dialog" aria-modal="true">
     <div class="zoom-sheet">
       <div class="zoom-top">
-        <div class="zoom-title">🔍 目盛りを拡大（読みやすく）</div>
-        <div class="zoom-pill" id="zoom-info">中心：—</div>
+        <div class="zoom-title">🔍 拡大表示</div>
         <button id="zoom-close">閉じる</button>
       </div>
 
@@ -331,46 +302,30 @@
 
       <div class="zoom-controls">
         <button id="zoom-minus">－</button>
-        <button id="zoom-factor">倍率：x3</button>
+        <button id="zoom-factor">x3</button>
         <button id="zoom-plus">＋</button>
-        <input type="range" id="zoom-center" min="0" max="200" step="1" value="0">
       </div>
-      <div class="tiny-note">
-        ・中心スライダーで見たい位置に合わせられます<br>
-        ・拡大中は“読む専用”です（色付けはメイン画面で）
-      </div>
+      <input type="range" id="zoom-center" min="0" max="200" step="1" value="0">
     </div>
   </div>
 
 <script>
 (() => {
-  // ===== iPhone横向き対策：見えている高さ(visual viewport)を使う =====
-  function setAppHeight(){
-    const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-    document.documentElement.style.setProperty("--appH", `${Math.round(h)}px`);
-  }
-  setAppHeight();
-  window.addEventListener("resize", setAppHeight);
-  window.addEventListener("orientationchange", ()=>setTimeout(setAppHeight, 200));
-  if (window.visualViewport){
-    window.visualViewport.addEventListener("resize", setAppHeight);
-    window.visualViewport.addEventListener("scroll", setAppHeight);
-  }
-
   // ===== 設定 =====
-  const STORAGE_KEY = "ruler_px_per_mm_v5";
+  const STORAGE_KEY = "ruler_px_per_mm_vUD";
   const DEFAULT_PPM = 3.78;
-  const RULER_LENGTH_MM = 200;    // 20cm
-  const LONGPRESS_MS = 260;       // 誤タッチ防止
+  const RULER_LENGTH_MM = 200;
+  const LONGPRESS_MS = 250;
 
-  // 色設定（青×オレンジ + 抜き薄グレー）
-  const STRIPE_PURPLE = "#0072B2"; // 青
-  const STRIPE_BLUE   = "#E69F00"; // オレンジ
-  const STRIPE_WHITE  = "#F1F5F9"; // 抜き（薄グレー）
-  const STRIPE_H_MAIN = 22;
-  const STRIPE_H_ZOOM = 22;
+  // UD配色設定
+  const COLOR_EVEN = "#42A5F5"; 
+  const COLOR_ODD  = "#FF7043"; 
+  const COLOR_GAP  = "rgba(0,0,0,0.03)"; 
 
-  // ===== 要素 =====
+  const STRIPE_H_MAIN = 25;
+  const STRIPE_H_ZOOM = 25;
+
+  // ===== 要素取得 =====
   const rulerContainer = document.getElementById("ruler-container");
   const stripesLayer   = document.getElementById("stripes-layer");
   const ticksLayer     = document.getElementById("ticks-layer");
@@ -384,7 +339,6 @@
 
   const modalCal     = document.getElementById("calibration-modal");
   const sliderPPM    = document.getElementById("px-per-mm-slider");
-  const ppmLabel     = document.getElementById("ppm-label");
   const btnCloseCal  = document.getElementById("btn-close-calib");
   const calibBox     = document.getElementById("calibration-box");
 
@@ -396,15 +350,13 @@
   const zoomStripes   = document.getElementById("zoom-stripes");
   const zoomTicks     = document.getElementById("zoom-ticks");
   const zoomColor     = document.getElementById("zoom-color");
-  const zoomInfo      = document.getElementById("zoom-info");
   const zoomCenter    = document.getElementById("zoom-center");
   const zoomMinus     = document.getElementById("zoom-minus");
   const zoomPlus      = document.getElementById("zoom-plus");
   const zoomFactorBtn = document.getElementById("zoom-factor");
 
-  // ===== 状態 =====
+  // ===== 状態変数 =====
   let pxPerMm = DEFAULT_PPM;
-
   let paintActive = false;
   let pressTimer = null;
   let pointerId = null;
@@ -412,12 +364,10 @@
   let endMm = null;
 
   let zoomOpen = false;
-  let zoomFactor = 3;
+  let zoomFactor = 3; 
   let zoomCenterMm = 0;
-
   let isColorMode = false;
 
-  // ===== util =====
   const clamp = (v,min,max)=>Math.max(min, Math.min(max,v));
   const mmToPx = (mm)=> mm * pxPerMm;
 
@@ -432,47 +382,47 @@
   function formatLen(mm){
     if (mm == null) return "—";
     const cm = mm / 10;
-    return `${cm.toFixed(1)} cm（${mm}mm）`;
+    return `${cm.toFixed(1)}cm <span style="font-size:0.8em; color:#555">(${mm}mm)</span>`;
   }
 
   function setReadout(){
     if (startMm == null || endMm == null){
-      readout.innerHTML = `長さ：— <small>（長押ししてなぞる）</small>`;
+      readout.innerHTML = `長さ：—`;
       return;
     }
     const a = Math.min(startMm, endMm);
     const b = Math.max(startMm, endMm);
     const len = Math.max(1, b - a);
-    readout.innerHTML = `長さ：${formatLen(len)} <small>（${a}mm → ${b}mm）</small>`;
+    readout.innerHTML = `長さ：${formatLen(len)}`;
   }
 
-  function stripeColorForMm(i){
-    const cm = Math.floor(i / 10);
-    const base = (cm % 2 === 0) ? STRIPE_PURPLE : STRIPE_BLUE; // 偶数cm=青, 奇数cm=オレンジ
-    const isBase = (i % 2 === 0);                               // 偶数mm=色, 奇数mm=抜き
-    return isBase ? base : STRIPE_WHITE;
+  function getStripeColor(i){
+    const cmBlock = Math.floor(i / 10);
+    const isEvenBlock = (cmBlock % 2 === 0);
+    const baseColor = isEvenBlock ? COLOR_EVEN : COLOR_ODD;
+    if (i % 2 === 0) {
+        return baseColor;
+    } else {
+        return COLOR_GAP;
+    }
   }
 
-  // ===== 描画（メイン） =====
   function drawRuler(){
     stripesLayer.innerHTML = "";
     ticksLayer.innerHTML = "";
-
     const totalWidth = RULER_LENGTH_MM * pxPerMm;
     rulerContainer.style.width = `${totalWidth}px`;
 
-    // ストライプ
     for (let i = 0; i < RULER_LENGTH_MM; i++){
       const s = document.createElement("div");
       s.className = "stripe";
       s.style.left = `${(i * pxPerMm).toFixed(2)}px`;
       s.style.width = `${pxPerMm.toFixed(2)}px`;
       s.style.height = `${STRIPE_H_MAIN}px`;
-      s.style.background = stripeColorForMm(i);
+      s.style.background = getStripeColor(i);
       stripesLayer.appendChild(s);
     }
 
-    // 目盛り
     for (let i = 0; i <= RULER_LENGTH_MM; i++){
       const x = i * pxPerMm;
       const tick = document.createElement("div");
@@ -481,23 +431,19 @@
 
       if (i % 10 === 0){
         tick.classList.add("tick-10mm");
-
         const tri = document.createElement("div");
         tri.className = "tri";
         tri.style.left = `${x.toFixed(2)}px`;
-        if (i === 0) { tri.classList.add("edge-left"); tri.style.left = `0px`; }
-        if (i === RULER_LENGTH_MM) tri.classList.add("edge-right");
         ticksLayer.appendChild(tri);
 
         const label = document.createElement("div");
         label.classList.add("tick-label");
         label.innerText = i / 10;
         label.style.left = `${x.toFixed(2)}px`;
-        if ((i/10) % 5 === 0) label.classList.add("label-strong");
-        if (i === 0) { label.classList.add("edge-left"); label.style.left = `0px`; }
-        if (i === RULER_LENGTH_MM) label.classList.add("edge-right");
+        
+        if ((i/10) % 2 === 0) label.classList.add("text-ud-blue");
+        else label.classList.add("text-ud-orange");
         ticksLayer.appendChild(label);
-
       } else if (i % 5 === 0){
         tick.classList.add("tick-5mm");
       } else {
@@ -508,7 +454,6 @@
     applyPaint();
   }
 
-  // ===== 区間塗り =====
   function applyPaint(){
     if (startMm == null || endMm == null){
       colorLayer.style.width = "0px";
@@ -530,10 +475,10 @@
     if (zoomOpen) applyZoomPaint();
   }
 
-  // ===== イベント =====
   document.addEventListener("touchmove", (e)=>{
     const t = e.target;
-    if (t && t.tagName === "INPUT" && t.type === "range") return;
+    // 拡大モーダル内とスライダーはスクロールを許可
+    if (t && (t.tagName === "INPUT" || t.closest(".zoom-sheet"))) return; 
     e.preventDefault();
   }, {passive:false});
 
@@ -556,6 +501,7 @@
       startMm = mm;
       endMm = mm;
       applyPaint();
+      if(navigator.vibrate) navigator.vibrate(15);
     }, LONGPRESS_MS);
   }
 
@@ -582,42 +528,29 @@
     applyPaint();
   }
 
-  function onPointerCancel(){
-    clearPressTimer();
-    paintActive = false;
-    pointerId = null;
-  }
+  function onPointerCancel(){ clearPressTimer(); paintActive = false; pointerId = null; }
 
   rulerContainer.addEventListener("pointerdown", onPointerDown);
   rulerContainer.addEventListener("pointermove", onPointerMove);
   rulerContainer.addEventListener("pointerup", onPointerUp);
   rulerContainer.addEventListener("pointercancel", onPointerCancel);
 
-  // ===== ボタン =====
   btnReset.addEventListener("click", ()=>{ startMm = null; endMm = null; applyPaint(); });
 
   btnColor.addEventListener("click", () => {
     isColorMode = !isColorMode;
-    if (isColorMode) {
-      rulerContainer.classList.add("show-colors");
-      zoomRuler.classList.add("show-colors");
-      btnColor.classList.add("active");
-      btnColor.textContent = "🎨 いろ ON";
-    } else {
-      rulerContainer.classList.remove("show-colors");
-      zoomRuler.classList.remove("show-colors");
-      btnColor.classList.remove("active");
-      btnColor.textContent = "🎨 いろ";
-    }
+    const action = isColorMode ? "add" : "remove";
+    rulerContainer.classList[action]("show-colors");
+    zoomRuler.classList[action]("show-colors");
+    btnColor.classList[action]("active");
+    btnColor.innerHTML = isColorMode ? "🎨 いろ ON" : "🎨 いろ";
   });
 
-  // ===== 校正 =====
   function updateCalibrationBox(){
     const w = 85.60 * pxPerMm;
     const h = 54.00 * pxPerMm;
     calibBox.style.width  = `${w}px`;
     calibBox.style.height = `${h}px`;
-    ppmLabel.textContent = `1mm = ${pxPerMm.toFixed(2)}px`;
     drawRuler();
     if (zoomOpen) rebuildZoomRuler();
   }
@@ -626,9 +559,11 @@
     modalCal.style.display = "none";
     localStorage.setItem(STORAGE_KEY, String(pxPerMm));
   });
-  sliderPPM.addEventListener("input", (e)=>{ pxPerMm = parseFloat(e.target.value); updateCalibrationBox(); });
+  sliderPPM.addEventListener("input", (e)=>{
+    pxPerMm = parseFloat(e.target.value);
+    updateCalibrationBox();
+  });
 
-  // ===== 拡大 =====
   function rebuildZoomRuler(){
     const pxPerMmZoom = pxPerMm * zoomFactor;
     const totalWidth = RULER_LENGTH_MM * pxPerMmZoom;
@@ -642,7 +577,7 @@
       s.style.left = `${(i * pxPerMmZoom).toFixed(2)}px`;
       s.style.width = `${pxPerMmZoom.toFixed(2)}px`;
       s.style.height = `${STRIPE_H_ZOOM}px`;
-      s.style.background = stripeColorForMm(i);
+      s.style.background = getStripeColor(i);
       zoomStripes.appendChild(s);
     }
 
@@ -651,26 +586,19 @@
       const tick = document.createElement("div");
       tick.classList.add("tick");
       tick.style.left = `${x.toFixed(2)}px`;
-
       if (i % 10 === 0){
         tick.classList.add("tick-10mm");
-
         const tri = document.createElement("div");
         tri.className = "tri";
         tri.style.left = `${x.toFixed(2)}px`;
-        if (i === 0) { tri.classList.add("edge-left"); tri.style.left = `0px`; }
-        if (i === RULER_LENGTH_MM) tri.classList.add("edge-right");
         zoomTicks.appendChild(tri);
-
         const label = document.createElement("div");
         label.classList.add("tick-label");
         label.innerText = i / 10;
         label.style.left = `${x.toFixed(2)}px`;
-        if ((i/10) % 5 === 0) label.classList.add("label-strong");
-        if (i === 0) { label.classList.add("edge-left"); label.style.left = `0px`; }
-        if (i === RULER_LENGTH_MM) label.classList.add("edge-right");
+        if ((i/10) % 2 === 0) label.classList.add("text-ud-blue");
+        else label.classList.add("text-ud-orange");
         zoomTicks.appendChild(label);
-
       } else if (i % 5 === 0){
         tick.classList.add("tick-5mm");
       } else {
@@ -698,49 +626,60 @@
     const vpW = viewport.clientWidth;
     const pxPerMmZoom = pxPerMm * zoomFactor;
     const totalWidth = RULER_LENGTH_MM * pxPerMmZoom;
+    
     zoomCenterMm = clamp(zoomCenterMm, 0, RULER_LENGTH_MM);
+    
     const centerPx = zoomCenterMm * pxPerMmZoom;
     let tx = (vpW/2) - centerPx;
-    tx = clamp(tx, vpW - totalWidth, 0);
+    tx = clamp(tx, vpW - totalWidth, 0); 
+    if(totalWidth < vpW) tx = (vpW - totalWidth)/2;
+
     zoomRuler.style.transform = `translate(${tx}px, -50%)`;
-    zoomInfo.textContent = `中心：${(zoomCenterMm/10).toFixed(1)} cm（${zoomCenterMm}mm）`;
   }
 
   function openZoom(){
     zoomOpen = true;
     zoomModal.style.display = "flex";
-    btnZoom.style.backgroundColor = "#d32f2f";
-    btnZoom.textContent = "🔍 元に戻す";
-    zoomCenterMm = (startMm != null && endMm != null) ? Math.round((startMm + endMm)/2) : 0;
-    zoomCenter.max = String(RULER_LENGTH_MM);
+    btnZoom.style.background = "#d32f2f";
+    btnZoom.textContent = "🔍 閉じる";
+    
+    if(startMm != null && endMm != null) zoomCenterMm = Math.round((startMm + endMm)/2);
+    else zoomCenterMm = 100;
+
     zoomCenter.value = String(zoomCenterMm);
-    zoomFactorBtn.textContent = `倍率：x${zoomFactor}`;
+    zoomFactorBtn.textContent = `x${zoomFactor}`;
+    
     rebuildZoomRuler();
     if(isColorMode) zoomRuler.classList.add("show-colors");
-    else zoomRuler.classList.remove("show-colors");
   }
 
   function closeZoom(){
     zoomOpen = false;
     zoomModal.style.display = "none";
-    btnZoom.style.backgroundColor = "#4CAF50";
+    btnZoom.style.background = "#00796B";
     btnZoom.textContent = "🔍 拡大";
   }
 
   btnZoom.addEventListener("click", ()=>{ if (!zoomOpen) openZoom(); else closeZoom(); });
   zoomClose.addEventListener("click", closeZoom);
-  zoomCenter.addEventListener("input", (e)=>{ zoomCenterMm = parseInt(e.target.value, 10); updateZoomPosition(); });
-  zoomMinus.addEventListener("click", ()=>{ zoomFactor = clamp(zoomFactor - 1, 2, 6); zoomFactorBtn.textContent = `倍率：x${zoomFactor}`; rebuildZoomRuler(); });
-  zoomPlus.addEventListener("click", ()=>{ zoomFactor = clamp(zoomFactor + 1, 2, 6); zoomFactorBtn.textContent = `倍率：x${zoomFactor}`; rebuildZoomRuler(); });
+  
+  zoomCenter.addEventListener("input", (e)=>{ 
+    zoomCenterMm = parseInt(e.target.value, 10); 
+    updateZoomPosition(); 
+  });
+  
+  zoomMinus.addEventListener("click", ()=>{ zoomFactor = clamp(zoomFactor - 1, 2, 5); zoomFactorBtn.textContent = `x${zoomFactor}`; rebuildZoomRuler(); });
+  zoomPlus.addEventListener("click", ()=>{ zoomFactor = clamp(zoomFactor + 1, 2, 5); zoomFactorBtn.textContent = `x${zoomFactor}`; rebuildZoomRuler(); });
+  
+  // モーダルの背景クリックで閉じる
   zoomModal.addEventListener("pointerdown", (e)=>{ if (e.target === zoomModal) closeZoom(); });
+
   window.addEventListener("resize", ()=>{ if (zoomOpen) updateZoomPosition(); });
 
-  // Init
   function init(){
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved && isFinite(Number(saved))) pxPerMm = parseFloat(saved);
     sliderPPM.value = String(pxPerMm);
-    ppmLabel.textContent = `1mm = ${pxPerMm.toFixed(2)}px`;
     updateCalibrationBox();
     setReadout();
   }
